@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MathHelp - Aprende Matemáticas</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="navbar">
+    <h1>📐 MathHelp</h1>
+    <div id="userInfo" class="user-info"></div>
+  </header>
+
+  <main class="container">
+    <section id="loginSection" class="card">
+      <h2>¡Bienvenido/a a MathHelp!</h2>
+      <p>Ingresa tu nombre para comenzar a resolver tus dudas matemáticas.</p>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="nombre">Nombre:</label>
+          <input type="text" id="nombre" placeholder="Ej. Mateo" required>
+        </div>
+        <div class="form-group">
+          <label for="apellido">Apellido:</label>
+          <input type="text" id="apellido" placeholder="Ej. Silva" required>
+        </div>
+        <button type="submit" class="btn-primary">Ingresar al Aula</button>
+      </form>
+    </section>
+
+    <section id="appSection" class="hidden">
+      <h2>Selecciona tu área de estudio</h2>
+      <div id="coursesGrid" class="grid"></div>
+
+      <div id="doubtCard" class="card hidden">
+        <h3 id="selectedCourseTitle">Curso</h3>
+        <p id="selectedCourseDesc"></p>
+
+        <form id="doubtForm">
+          <input type="hidden" id="selectedCourseId">
+          <div class="form-group">
+            <label for="pregunta">Escribe tu problema o duda matemática:</label>
+            <textarea id="pregunta" rows="3" placeholder="Ej: ¿Cómo resuelvo la ecuación 2x + 5 = 15?" required></textarea>
+          </div>
+          <button type="submit" class="btn-success">Obtener Ayuda</button>
+        </form>
+
+        <div id="responseArea" class="response-box hidden">
+          <h4>Explicación:</h4>
+          <p id="responseText"></p>
+        </div>
+      </div>
+
+      <section class="card history-card">
+        <h3>Tu Historial de Consultas</h3>
+        <ul id="historyList"></ul>
+      </section>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
