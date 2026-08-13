@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mante - Curso</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <a href="dashboard.html" class="btn secondary sm">⬅ Volver al Panel</a>
+    <h2 id="courseTitle">Curso</h2>
+    <button onclick="showHelpModal()" class="btn help-btn">❓ Ayuda</button>
+  </header>
+
+  <main class="container">
+    <div class="course-header">
+      <span id="levelLabel">Problema 1 / 100</span>
+      <div class="progress-container">
+        <div class="progress-bar" id="courseProgressBar" style="width: 1%;"></div>
+      </div>
+    </div>
+
+    <div class="problem-card shadow">
+      <div id="expression" class="math-display">1 + 1</div>
+      <form id="answerForm">
+        <input type="number" step="any" id="userAnswer" placeholder="Tu respuesta..." required autofocus autocomplete="off">
+        <button type="submit" class="btn primary">Responder</button>
+      </form>
+      <div id="feedback" class="feedback"></div>
+    </div>
+  </main>
+
+  <!-- Modal de Explicación y Ayuda -->
+  <div id="helpModal" class="modal-overlay">
+    <div class="modal-content">
+      <h2 id="helpTitle">Explicación Teórica</h2>
+      <div id="helpBody" class="help-body"></div>
+      <button onclick="closeHelpModal()" class="btn primary full-width">¡Entendido! Continuar al Curso</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
