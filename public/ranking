@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mante - Ranking Mundial</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <h2>🏆 Ranking Global en Tiempo Real</h2>
+    <a href="dashboard.html" class="btn secondary sm">⬅ Volver al Panel</a>
+  </header>
+
+  <main class="container">
+    <div class="card shadow">
+      <table class="ranking-table">
+        <thead>
+          <tr>
+            <th>Posición</th>
+            <th>Usuario</th>
+            <th>Problemas Resueltos (Score)</th>
+          </tr>
+        </thead>
+        <tbody id="rankingTableBody">
+          <tr><td colspan="3">Cargando ranking...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    const socket = io();
+    socket.on('update_ranking', (data) => {
+      const tbody = document.getElementById('rankingTableBody');
+      tbody.innerHTML = '';
+
+      // Ordenar usuarios por puntaje descendente
+      data.sort((a, b) => b.totalScore - a.totalScore);
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3">Aún no hay puntuaciones registradas.</td></tr>';
+        return;
+      }
+
+      data.forEach((user, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>#${index + 1}</strong></td>
+          <td>${user.username}</td>
+          <td>${user.totalScore} pts</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+  </script>
+</body>
+</html>
