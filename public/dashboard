@@ -5,66 +5,118 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mante - Panel Principal</title>
   <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
   <header class="navbar">
     <h2>📐 Mante</h2>
-    <div>
+    <div class="user-info">
       <span id="userGreeting">Hola</span>
-      <a href="ranking.html" class="btn secondary sm">🏆 Ranking Global</a>
+      <span id="userScoreBadge" class="score-badge">⭐ 0 pts</span>
+      <a href="ranking.html" class="btn secondary sm">🏆 Ver Ranking Completo</a>
     </div>
   </header>
 
-  <main class="container">
-    <h2>Selecciona un Curso</h2>
-    <p>Cada curso contiene 100 problemas progresivos.</p>
+  <main class="container layout-grid">
+    <section class="courses-section">
+      <h2>Selecciona un Curso</h2>
+      <p>Cada curso contiene 100 problemas. ¡Gana puntos con respuestas correctas y evita las penalizaciones!</p>
 
-    <div class="grid">
-      <!-- Curso Suma -->
-      <div class="course-card">
-        <h3>➕ Sumas</h3>
-        <p>Desde números simples hasta millones, paréntesis y decimales.</p>
-        <div class="progress-container">
-          <div class="progress-bar" id="bar-suma" style="width: 0%;"></div>
+      <div class="grid">
+        <!-- Curso Suma -->
+        <div class="course-card">
+          <h3>➕ Sumas</h3>
+          <p>Desde sumas simples hasta millones, paréntesis y decimales.</p>
+          <div class="progress-container">
+            <div class="progress-bar" id="bar-suma" style="width: 0%;"></div>
+          </div>
+          <small id="text-suma">0 / 100 Completados</small>
+          <button onclick="startCourse('suma')" class="btn primary full-width">Ir al Curso</button>
         </div>
-        <small id="text-suma">0 / 100 Completados</small>
-        <button onclick="startCourse('suma')" class="btn primary full-width">Ir al Curso</button>
-      </div>
 
-      <!-- Curso Resta -->
-      <div class="course-card">
-        <h3>➖ Restas</h3>
-        <p>Aprende a sustraer cifras pequeñas, grandes y con decimales.</p>
-        <div class="progress-container">
-          <div class="progress-bar" id="bar-resta" style="width: 0%;"></div>
+        <!-- Curso Resta -->
+        <div class="course-card">
+          <h3>➖ Restas</h3>
+          <p>Aprende a sustraer cifras pequeñas, grandes y con decimales.</p>
+          <div class="progress-container">
+            <div class="progress-bar" id="bar-resta" style="width: 0%;"></div>
+          </div>
+          <small id="text-resta">0 / 100 Completados</small>
+          <button onclick="startCourse('resta')" class="btn primary full-width">Ir al Curso</button>
         </div>
-        <small id="text-resta">0 / 100 Completados</small>
-        <button onclick="startCourse('resta')" class="btn primary full-width">Ir al Curso</button>
-      </div>
 
-      <!-- Curso Multiplicación -->
-      <div class="course-card">
-        <h3>✖️ Multiplicación</h3>
-        <p>Tablas, multiplicación por miles, jerarquía y decimales.</p>
-        <div class="progress-container">
-          <div class="progress-bar" id="bar-multiplicacion" style="width: 0%;"></div>
+        <!-- Curso Multiplicación -->
+        <div class="course-card">
+          <h3>✖️ Multiplicación</h3>
+          <p>Tablas, multiplicación por miles, jerarquía y decimales.</p>
+          <div class="progress-container">
+            <div class="progress-bar" id="bar-multiplicacion" style="width: 0%;"></div>
+          </div>
+          <small id="text-multiplicacion">0 / 100 Completados</small>
+          <button onclick="startCourse('multiplicacion')" class="btn primary full-width">Ir al Curso</button>
         </div>
-        <small id="text-multiplicacion">0 / 100 Completados</small>
-        <button onclick="startCourse('multiplicacion')" class="btn primary full-width">Ir al Curso</button>
       </div>
-    </div>
+    </section>
+
+    <!-- Panel Lateral de Ranking Global -->
+    <aside class="ranking-panel card shadow">
+      <h3>🏆 Ranking Global Top Players</h3>
+      <table class="ranking-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Usuario</th>
+            <th>Puntos</th>
+          </tr>
+        </thead>
+        <tbody id="sideRankingBody">
+          <tr><td colspan="3">Cargando clasificación...</td></tr>
+        </tbody>
+      </table>
+    </aside>
   </main>
 
   <script>
+    const socket = io();
     const user = localStorage.getItem('mante_user');
     if(!user) window.location.href = 'index.html';
+    
     document.getElementById('userGreeting').innerText = `Hola, ${user}`;
+    socket.emit('register_user', user);
 
     const courses = ['suma', 'resta', 'multiplicacion'];
     courses.forEach(c => {
       const level = localStorage.getItem(`mante_prog_${c}`) || 0;
       document.getElementById(`bar-${c}`).style.width = `${level}%`;
       document.getElementById(`text-${c}`).innerText = `${level} / 100 Completados`;
+    });
+
+    socket.on('update_ranking', (data) => {
+      const sideTbody = document.getElementById('sideRankingBody');
+      sideTbody.innerHTML = '';
+
+      // Actualizar la insignia de puntos del usuario actual
+      const me = data.find(u => u.username === user);
+      if (me) {
+        document.getElementById('userScoreBadge').innerText = `⭐ ${me.totalScore} pts`;
+      }
+
+      if (data.length === 0) {
+        sideTbody.innerHTML = '<tr><td colspan="3">Sin registros.</td></tr>';
+        return;
+      }
+
+      // Mostrar Top en el panel lateral
+      data.slice(0, 10).forEach((p, idx) => {
+        const tr = document.createElement('tr');
+        if (p.username === user) tr.className = 'highlight-user';
+        tr.innerHTML = `
+          <td><b>#${idx + 1}</b></td>
+          <td>${p.username}</td>
+          <td><b>${p.totalScore}</b></td>
+        `;
+        sideTbody.appendChild(tr);
+      });
     });
 
     function startCourse(course) {
