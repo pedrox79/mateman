@@ -3,94 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MathHelp - Matemáticas Fáciles</title>
+  <title>Mante - Bienvenido</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-
-  <header class="navbar">
-    <h1>🔢 MathHelp - Matemáticas Fáciles</h1>
-    <div id="userInfo" class="user-info"></div>
-  </header>
-
-  <main class="container">
-
-    <!-- Pantalla 1: Formulario de Ingreso -->
-    <section id="loginSection" class="card">
-      <h2>¡Bienvenido/a a MathHelp!</h2>
-      <p>Aprende matemáticas fáciles como sumas, restas y multiplicaciones paso a paso.</p>
-      
-      <form id="loginForm">
-        <div class="form-group">
-          <label for="nombre">Nombre:</label>
-          <input type="text" id="nombre" placeholder="Ej. Carlos" required>
-        </div>
-        <div class="form-group">
-          <label for="apellido">Apellido:</label>
-          <input type="text" id="apellido" placeholder="Ej. Gómez" required>
-        </div>
-        <button type="submit" class="btn-primary">Ingresar a la Plataforma</button>
-      </form>
-    </section>
-
-    <!-- Pantalla 2: Instrucciones / Explicación en 3 Pasos -->
-    <section id="welcomeSection" class="card hidden">
-      <h2>¡Hola, <span id="userNameDisplay"></span>! 👋</h2>
-      <p>Aprender matemáticas aquí es súper fácil y divertido. Sigue estos <strong>3 sencillos pasos</strong>:</p>
-
-      <div class="steps-container">
-        <div class="step-card">
-          <div class="step-number">1</div>
-          <h3>Lee la Pregunta</h3>
-          <p>Te mostraremos ejercicios sencillos como <em>"¿Cuánto es 5 + 3?"</em> o <em>"¿Cuánto es 4 × 2?"</em>.</p>
-        </div>
-
-        <div class="step-card">
-          <div class="step-number">2</div>
-          <h3>Escribe tu Respuesta</h3>
-          <p>Escribe el número en el recuadro y presiona el botón <strong>"Comprobar Respuesta"</strong>.</p>
-        </div>
-
-        <div class="step-card">
-          <div class="step-number">3</div>
-          <h3>¡Aprende y Mejora!</h3>
-          <p>Descubre al instante si acertaste y acumula puntos en tu historial de ejercicios.</p>
-        </div>
+<body class="center-layout">
+  <div class="card shadow">
+    <h1>📐 Mante</h1>
+    <p>Aprende matemáticas paso a paso, desde lo básico hasta nivel máster.</p>
+    
+    <form id="loginForm">
+      <div class="input-group">
+        <label for="username">Ingresa tu Nombre / Alias:</label>
+        <input type="text" id="username" placeholder="Ej. Carlos123" required autocomplete="off">
       </div>
+      <button type="submit" class="btn primary">Continuar ➔</button>
+    </form>
+  </div>
 
-      <button id="btnStartGame" class="btn-success btn-large">🚀 ¡Comenzar con la primera pregunta!</button>
-    </section>
-
-    <!-- Pantalla 3: Zona de Preguntas Matemáticas -->
-    <section id="quizSection" class="card hidden">
-      <div class="quiz-header">
-        <span class="badge">Ejercicio Práctico</span>
-      </div>
-
-      <h2 id="mathQuestion" class="math-question">¿Cuánto es...?</h2>
-
-      <form id="quizForm">
-        <div class="form-group">
-          <label for="userAnswer">Tu Respuesta:</label>
-          <input type="number" id="userAnswer" placeholder="Escribe el resultado aquí..." required autocomplete="off">
-        </div>
-        <button type="submit" class="btn-primary">Comprobar Respuesta</button>
-      </form>
-
-      <div id="feedbackBox" class="feedback-box hidden">
-        <p id="feedbackText"></p>
-        <button id="btnNextQuestion" class="btn-secondary">Siguiente Pregunta ➔</button>
-      </div>
-
-      <!-- Historial -->
-      <div class="history-section">
-        <h3>Tu Historial Reciente</h3>
-        <ul id="historyList"></ul>
-      </div>
-    </section>
-
-  </main>
-
-  <script src="app.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const user = document.getElementById('username').value.trim();
+      if(user) {
+        localStorage.setItem('mante_user', user);
+        window.location.href = 'dashboard.html';
+      }
+    });
+  </script>
 </body>
 </html>
