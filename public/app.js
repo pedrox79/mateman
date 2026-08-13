@@ -1,115 +1,194 @@
-let currentUser = null;
-let currentQuestion = null;
+const socket = io();
+const urlParams = new URLSearchParams(window.location.search);
+const courseType = urlParams.get('type') || 'suma';
+const username = localStorage.getItem('mante_user');
 
-// 1. Ingreso del usuario
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const nombre = document.getElementById('nombre').value;
-  const apellido = document.getElementById('apellido').value;
+if (!username) window.location.href = 'index.html';
 
-  try {
-    const res = await fetch('/api/registro', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, apellido })
-    });
+let currentLevel = parseInt(localStorage.getItem(`mante_prog_${courseType}`)) || 0;
+let currentProblem = null;
 
-    if (res.ok) {
-      currentUser = await res.json();
-      
-      // Ocultar login y mostrar pantalla de 3 pasos de explicación
-      document.getElementById('loginSection').classList.add('hidden');
-      document.getElementById('welcomeSection').classList.remove('hidden');
-      document.getElementById('userNameDisplay').textContent = currentUser.nombre;
-      document.getElementById('userInfo').textContent = `Estudiante: ${currentUser.nombre} ${currentUser.apellido}`;
+// Títulos y Explicaciones iniciales
+const courseInfo = {
+  suma: {
+    title: "Curso de Sumas",
+    help: `
+      <h3>¿Cómo funciona el curso de Suma?</h3>
+      <p><b>Niveles 1–10:</b> Sumas básicas de un solo dígito (ej. $4 + 5$).</p>
+      <p><b>Niveles 11–25:</b> Decenas y centenas (ej. $45 + 89$).</p>
+      <p><b>Niveles 26–40:</b> Introducción a los paréntesis. Recuerda: <i>primero se resuelve lo que está dentro del paréntesis</i>, por ejemplo: $(10 + 5) + 20 = 15 + 20 = 35$.</p>
+      <p><b>Niveles 41–60:</b> Números de miles y millones (ej. $12,500 + 4,300$).</p>
+      <p><b>Niveles 61–80:</b> Decimales. Alinea la coma decimal al sumar (ej. $4.5 + 2.3 = 6.8$).</p>
+      <p><b>Niveles 81–100:</b> Expresiones mixtas con paréntesis, decimales y grandes cifras.</p>
+    `
+  },
+  resta: {
+    title: "Curso de Restas",
+    help: `
+      <h3>¿Cómo funciona el curso de Resta?</h3>
+      <p><b>Niveles 1–10:</b> Restas sencillas sin llevar (ej. $9 - 4$).</p>
+      <p><b>Niveles 11–25:</b> Restas con dos y tres cifras.</p>
+      <p><b>Niveles 26–40:</b> Restas con paréntesis. Resuelve primero el paréntesis: $50 - (10 - 5) = 50 - 5 = 45$.</p>
+      <p><b>Niveles 41–60:</b> Sustracción con miles y millones.</p>
+      <p><b>Niveles 61–80:</b> Resta con decimales.</p>
+      <p><b>Niveles 81–100:</b> Operaciones combinadas complejas.</p>
+    `
+  },
+  multiplicacion: {
+    title: "Curso de Multiplicación",
+    help: `
+      <h3>¿Cómo funciona el curso de Multiplicación?</h3>
+      <p><b>Niveles 1–10:</b> Tablas básicas del 1 al 10.</p>
+      <p><b>Niveles 11–25:</b> Multiplicación de dos dígitos por un dígito.</p>
+      <p><b>Niveles 26–40:</b> Uso de paréntesis en multiplicación: $(2 \\times 3) \\times 4 = 6 \\times 4 = 24$.</p>
+      <p><b>Niveles 41–60:</b> Multiplicación por miles y decenas.</p>
+      <p><b>Niveles 61–80:</b> Multiplicación con decimales.</p>
+      <p><b>Niveles 81–100:</b> Operaciones mixtas combinadas.</p>
+    `
+  }
+};
+
+// Configurar vista inicial
+document.getElementById('courseTitle').innerText = courseInfo[courseType]?.title || "Curso";
+document.getElementById('helpBody').innerHTML = courseInfo[courseType]?.help || "Explicación no disponible.";
+
+// Mostrar modal de ayuda por primera vez si no se ha iniciado
+if (currentLevel === 0 && !sessionStorage.getItem(`read_help_${courseType}`)) {
+  showHelpModal();
+  sessionStorage.setItem(`read_help_${courseType}`, 'true');
+}
+
+function showHelpModal() {
+  document.getElementById('helpModal').classList.add('active');
+}
+
+function closeHelpModal() {
+  document.getElementById('helpModal').classList.remove('active');
+}
+
+// Generador de problemas dinámicos (1 a 100)
+function generateProblem(type, levelIndex) {
+  const level = levelIndex + 1; // 1 to 100
+  let a, b, c, prompt, answer;
+
+  const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const randDec = (min, max) => parseFloat((Math.random() * (max - min) + min).toFixed(1));
+
+  if (type === 'suma') {
+    if (level <= 10) {
+      a = randInt(1, 9); b = randInt(1, 9);
+      prompt = `${a} +${b}`; answer = a + b;
+    } else if (level <= 25) {
+      a = randInt(10, 99); b = randInt(10, 99);
+      prompt = `${a} +${b}`; answer = a + b;
+    } else if (level <= 40) {
+      a = randInt(5, 30); b = randInt(5, 30); c = randInt(10, 40);
+      prompt = `(${a} + ${b}) +${c}`; answer = a + b + c;
+    } else if (level <= 60) {
+      a = randInt(1000, 50000); b = randInt(1000, 50000);
+      prompt = `${a.toLocaleString()} +${b.toLocaleString()}`; answer = a + b;
+    } else if (level <= 80) {
+      a = randDec(1, 50); b = randDec(1, 50);
+      prompt = `${a} +${b}`; answer = parseFloat((a + b).toFixed(1));
     } else {
-      alert('Por favor ingresa nombre y apellido.');
+      a = randInt(100000, 1000000); b = randInt(100000, 1000000); c = randDec(5, 50);
+      prompt = `(${a.toLocaleString()} + ${b.toLocaleString()}) +${c}`;
+      answer = parseFloat((a + b + c).toFixed(1));
     }
-  } catch (err) {
-    console.error(err);
-    alert('Error al conectar con el servidor.');
+  } else if (type === 'resta') {
+    if (level <= 10) {
+      a = randInt(5, 15); b = randInt(1, a);
+      prompt = `${a} -${b}`; answer = a - b;
+    } else if (level <= 25) {
+      a = randInt(30, 99); b = randInt(10, a);
+      prompt = `${a} -${b}`; answer = a - b;
+    } else if (level <= 40) {
+      b = randInt(5, 20); c = randInt(1, b); a = randInt(30, 60);
+      prompt = `${a} - (${b} -${c})`; answer = a - (b - c);
+    } else if (level <= 60) {
+      a = randInt(10000, 99999); b = randInt(1000, a);
+      prompt = `${a.toLocaleString()} -${b.toLocaleString()}`; answer = a - b;
+    } else if (level <= 80) {
+      a = randDec(20, 99); b = randDec(1, a);
+      prompt = `${a} -${b}`; answer = parseFloat((a - b).toFixed(1));
+    } else {
+      a = randInt(500000, 1000000); b = randInt(100000, a); c = randDec(1, 20);
+      prompt = `(${a.toLocaleString()} - ${b.toLocaleString()}) -${c}`;
+      answer = parseFloat((a - b - c).toFixed(1));
+    }
+  } else { // multiplicacion
+    if (level <= 10) {
+      a = randInt(2, 9); b = randInt(2, 9);
+      prompt = `${a} ×${b}`; answer = a * b;
+    } else if (level <= 25) {
+      a = randInt(10, 30); b = randInt(2, 9);
+      prompt = `${a} ×${b}`; answer = a * b;
+    } else if (level <= 40) {
+      a = randInt(2, 5); b = randInt(2, 5); c = randInt(2, 6);
+      prompt = `(${a} × ${b}) ×${c}`; answer = a * b * c;
+    } else if (level <= 60) {
+      a = randInt(100, 999); b = randInt(10, 99);
+      prompt = `${a} ×${b}`; answer = a * b;
+    } else if (level <= 80) {
+      a = randDec(1, 10); b = randInt(2, 5);
+      prompt = `${a} ×${b}`; answer = parseFloat((a * b).toFixed(1));
+    } else {
+      a = randDec(1, 10); b = randDec(1, 5); c = randInt(2, 4);
+      prompt = `(${a} × ${b}) ×${c}`; answer = parseFloat((a * b * c).toFixed(2));
+    }
   }
-});
 
-// 2. Botón para comenzar el juego / preguntas
-document.getElementById('btnStartGame').addEventListener('click', () => {
-  document.getElementById('welcomeSection').classList.add('hidden');
-  document.getElementById('quizSection').classList.remove('hidden');
-  loadNewQuestion();
-});
+  return { prompt, answer };
+}
 
-// 3. Cargar pregunta desde la API
-async function loadNewQuestion() {
-  document.getElementById('feedbackBox').classList.add('hidden');
+// Cargar la pregunta actual
+function loadNextQuestion() {
+  if (currentLevel >= 100) {
+    document.getElementById('expression').innerText = "🎉 ¡Felicidades! Has completado los 100 problemas de este curso.";
+    document.getElementById('answerForm').style.display = 'none';
+    return;
+  }
+
+  currentProblem = generateProblem(courseType, currentLevel);
+  document.getElementById('expression').innerText = `${currentProblem.prompt} = ?`;
   document.getElementById('userAnswer').value = '';
-  document.getElementById('userAnswer').focus();
+  document.getElementById('feedback').innerText = '';
 
-  try {
-    const res = await fetch('/api/pregunta');
-    currentQuestion = await res.json();
-    document.getElementById('mathQuestion').textContent = currentQuestion.pregunta;
-  } catch (err) {
-    console.error(err);
-  }
+  // Actualizar UI de progreso
+  document.getElementById('levelLabel').innerText = `Problema ${currentLevel + 1} / 100`;
+  document.getElementById('courseProgressBar').style.width = `${((currentLevel) / 100) * 100}%`;
 }
 
-// 4. Enviar respuesta del alumno
-document.getElementById('quizForm').addEventListener('submit', async (e) => {
+// Evento al responder
+document.getElementById('answerForm').addEventListener('submit', (e) => {
   e.preventDefault();
-  const userAnswerVal = parseInt(document.getElementById('userAnswer').value, 10);
+  const inputVal = parseFloat(document.getElementById('userAnswer').value);
+  const feedback = document.getElementById('feedback');
 
-  if (isNaN(userAnswerVal)) return;
+  if (Math.abs(inputVal - currentProblem.answer) < 0.01) {
+    feedback.innerText = "¡Correcto! Excelente trabajo. 👏";
+    feedback.className = "feedback success";
 
-  const esCorrecto = (userAnswerVal === currentQuestion.respuestaCorrecta);
-  const feedbackBox = document.getElementById('feedbackBox');
-  const feedbackText = document.getElementById('feedbackText');
+    currentLevel++;
+    localStorage.setItem(`mante_prog_${courseType}`, currentLevel);
 
-  if (esCorrecto) {
-    feedbackBox.className = 'feedback-box correct';
-    feedbackText.textContent = `🎉 ¡Excelente! ${currentQuestion.pregunta} es igual a ${currentQuestion.respuestaCorrecta}.`;
-  } else {
-    feedbackBox.className = 'feedback-box incorrect';
-    feedbackText.textContent = `❌ ¡Casi! Dijiste ${userAnswerVal}, pero la respuesta correcta de "${currentQuestion.pregunta}" es ${currentQuestion.respuestaCorrecta}.`;
-  }
-
-  feedbackBox.classList.remove('hidden');
-
-  // Guardar resultado
-  try {
-    await fetch('/api/consultas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        usuarioId: currentUser.id,
-        pregunta: currentQuestion.pregunta,
-        respuestaUsuario: userAnswerVal,
-        esCorrecto: esCorrecto
-      })
+    // Notificar al servidor para el ranking en tiempo real
+    socket.emit('submit_progress', {
+      username: username,
+      course: courseType,
+      level: currentLevel
     });
-    loadHistory();
-  } catch (err) {
-    console.error(err);
+
+    // Pasar inmediatamente a la siguiente pregunta tras 800ms
+    setTimeout(() => {
+      loadNextQuestion();
+    }, 800);
+
+  } else {
+    feedback.innerText = `Incorrecto. La respuesta correcta era ${currentProblem.answer}. Inténtalo de nuevo.`;
+    feedback.className = "feedback error";
   }
 });
 
-// 5. Botón para siguiente pregunta
-document.getElementById('btnNextQuestion').addEventListener('click', loadNewQuestion);
-
-// 6. Cargar historial
-async function loadHistory() {
-  if (!currentUser) return;
-  try {
-    const res = await fetch(`/api/consultas/${currentUser.id}`);
-    const history = await res.json();
-    const list = document.getElementById('historyList');
-    list.innerHTML = '';
-
-    history.forEach(item => {
-      const li = document.createElement('li');
-      li.innerHTML = `<strong>${item.pregunta}</strong> — <em>${item.respuesta}</em>`;
-      list.appendChild(li);
-    });
-  } catch (err) {
-    console.error(err);
-  }
-}
+// Iniciar primer ejercicio
+loadNextQuestion();
